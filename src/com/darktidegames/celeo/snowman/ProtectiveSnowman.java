@@ -39,7 +39,7 @@ public class ProtectiveSnowman extends JavaPlugin implements Listener
 	{
 		Entity hurt = event.getEntity();
 		if (hurt instanceof Snowman
-				&& event.getCause().equals(DamageCause.DROWNING))
+				&& (event.getCause().equals(DamageCause.DROWNING) || event.getCause().equals(DamageCause.MELTING)))
 			event.setCancelled(true);
 	}
 
