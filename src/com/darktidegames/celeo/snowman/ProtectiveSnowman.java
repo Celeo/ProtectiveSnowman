@@ -1,7 +1,5 @@
 package com.darktidegames.celeo.snowman;
 
-import java.io.File;
-
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -26,10 +24,6 @@ public class ProtectiveSnowman extends JavaPlugin implements Listener
 	@Override
 	public void onEnable()
 	{
-		getDataFolder().mkdirs();
-		if (!new File(getDataFolder(), "config.yml").exists())
-			saveDefaultConfig();
-		reloadConfig();
 		getServer().getPluginManager().registerEvents(this, this);
 		getLogger().info("Enabled");
 	}
