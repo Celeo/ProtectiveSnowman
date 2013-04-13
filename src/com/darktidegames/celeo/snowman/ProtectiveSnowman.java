@@ -1,9 +1,13 @@
 package com.darktidegames.celeo.snowman;
 
 import java.io.File;
+import java.util.List;
 
+import org.bukkit.World;
+import org.bukkit.World.Environment;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Creeper;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -28,6 +32,8 @@ public class ProtectiveSnowman extends JavaPlugin implements Listener
 
 	private int snowmanMaxHealth = 10;
 	private int snowballDamage = 6;
+	private boolean attackCreepers = false;
+	private int creeperTooFar = 25;
 
 	@Override
 	public void onLoad()
@@ -42,6 +48,45 @@ public class ProtectiveSnowman extends JavaPlugin implements Listener
 	{
 		load();
 		getServer().getPluginManager().registerEvents(this, this);
+		getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				if (!attackCreepers)
+					return;
+				for (World world : getServer().getWorlds())
+				{
+					if (!world.getEnvironment().equals(Environment.NORMAL))
+						continue;
+					if (world.getEntities().isEmpty())
+						continue;
+					for (Entity e : world.getEntities())
+					{
+						if (!(e instanceof LivingEntity))
+							continue;
+						if (!(e instanceof Snowman))
+							continue;
+						Snowman snowman = (Snowman) e;
+						if (snowman.getTarget() != null)
+							if (snowman.getLocation().distance(snowman.getTarget().getLocation()) > creeperTooFar)
+								snowman.setTarget(null);
+						List<Entity> near = snowman.getNearbyEntities(8, 1, 8);
+						if (near.isEmpty())
+							continue;
+						for (Entity n : near)
+						{
+							if (!(n instanceof LivingEntity))
+								continue;
+							if (!(n instanceof Creeper))
+								continue;
+							snowman.setTarget((LivingEntity) n);
+							return;
+						}
+					}
+				}
+			}
+		}, 100L, 100L);
 		getLogger().info("Enabled");
 	}
 
@@ -50,12 +95,15 @@ public class ProtectiveSnowman extends JavaPlugin implements Listener
 		reloadConfig();
 		snowmanMaxHealth = getConfig().getInt("snowman.maxHealth", 10);
 		snowballDamage = getConfig().getInt("snowman.snowballDamage", 6);
+		attackCreepers = getConfig().getBoolean("snowman.attackCreepers", true);
+		creeperTooFar = getConfig().getInt("snowman.creeperTooFar", 25);
 		getLogger().info("Settings loaded from configuration");
 	}
 
 	@Override
 	public void onDisable()
 	{
+		getServer().getScheduler().cancelTasks(this);
 		getLogger().info("Disabled");
 	}
 
@@ -82,7 +130,11 @@ public class ProtectiveSnowman extends JavaPlugin implements Listener
 					player.sendMessage("§7[ProtectiveSnowman] Snowman max health: §6"
 							+ snowmanMaxHealth
 							+ "§7, Snowball damage: §6"
-							+ snowballDamage);
+							+ snowballDamage
+							+ "§7, Snowmen will attack creepers: §6"
+							+ attackCreepers
+							+ " §7, Snowmen giveup on creeper distance: §6"
+							+ creeperTooFar);
 				else
 					player.sendMessage("§c/snowman [reload|info]");
 			}

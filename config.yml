@@ -1,3 +1,5 @@
 snowman:
   maxHealth: 10
   snowballDamage: 6
+  attackCreepers: false
+  creeperTooFar: 25
