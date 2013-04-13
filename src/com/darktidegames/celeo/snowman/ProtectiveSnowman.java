@@ -1,5 +1,9 @@
 package com.darktidegames.celeo.snowman;
 
+import java.io.File;
+
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -7,6 +11,7 @@ import org.bukkit.entity.Snowball;
 import org.bukkit.entity.Snowman;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
@@ -21,17 +26,94 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class ProtectiveSnowman extends JavaPlugin implements Listener
 {
 
+	private int snowmanMaxHealth = 10;
+	private int snowballDamage = 6;
+
+	@Override
+	public void onLoad()
+	{
+		getDataFolder().mkdirs();
+		if (!new File(getDataFolder(), "config.yml").exists())
+			saveDefaultConfig();
+	}
+
 	@Override
 	public void onEnable()
 	{
+		load();
 		getServer().getPluginManager().registerEvents(this, this);
 		getLogger().info("Enabled");
+	}
+
+	private void load()
+	{
+		reloadConfig();
+		snowmanMaxHealth = getConfig().getInt("snowman.maxHealth", 10);
+		snowballDamage = getConfig().getInt("snowman.snowballDamage", 6);
+		getLogger().info("Settings loaded from configuration");
 	}
 
 	@Override
 	public void onDisable()
 	{
 		getLogger().info("Disabled");
+	}
+
+	@Override
+	public boolean onCommand(CommandSender sender, Command command, String label, String[] args)
+	{
+		if (sender instanceof Player)
+		{
+			Player player = (Player) sender;
+			if (player.isOp()
+					|| player.hasPermission("protectivesnowman.control"))
+			{
+				if (args == null || args.length == 0)
+				{
+					player.sendMessage("§c/snowman [reload|info]");
+					return true;
+				}
+				if (args[0].equalsIgnoreCase("reload"))
+				{
+					load();
+					player.sendMessage("§aReloaded from configuration");
+				}
+				else if (args[0].equalsIgnoreCase("info"))
+					player.sendMessage("§7[ProtectiveSnowman] Snowman max health: §6"
+							+ snowmanMaxHealth
+							+ "§7, Snowball damage: §6"
+							+ snowballDamage);
+				else
+					player.sendMessage("§c/snowman [reload|info]");
+			}
+			else
+				player.sendMessage("§cYou cannot use that command");
+			return true;
+		}
+		if (args == null || args.length == 0)
+		{
+			sender.sendMessage("/snowman [reload|info]");
+			return true;
+		}
+		if (args[0].equalsIgnoreCase("reload"))
+			load();
+		else if (args[0].equalsIgnoreCase("info"))
+			sender.sendMessage("§7[ProtectiveSnowman] Snowman max health: "
+					+ snowmanMaxHealth + ", Snowball damage:" + snowballDamage);
+		else
+			sender.sendMessage("/snowman [reload|info]");
+		return false;
+	}
+
+	@EventHandler
+	public void onCreatureSpawn(CreatureSpawnEvent event)
+	{
+		Entity entity = event.getEntity();
+		if (entity instanceof Snowman)
+		{
+			((Snowman) entity).setMaxHealth(snowmanMaxHealth);
+			((Snowman) entity).setHealth(snowmanMaxHealth);
+		}
 	}
 
 	@EventHandler
@@ -50,7 +132,7 @@ public class ProtectiveSnowman extends JavaPlugin implements Listener
 		Entity damager = event.getDamager();
 		if (damager instanceof Snowball)
 			if (hurt instanceof LivingEntity && !(hurt instanceof Player))
-				event.setDamage(6);
+				event.setDamage(snowballDamage);
 	}
 
 }

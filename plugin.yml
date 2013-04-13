@@ -1,10 +1,10 @@
 name: ProtectiveSnowman
-version: 1.0.0.2
+version: 1.0.1.0
 author: Celeo
 website: http://www.darktidegames.com/ 
 descriptions: Snowballs do damage to mobs
 main: com.darktidegames.celeo.snowman.ProtectiveSnowman
 commands:
-  protectivesnowman:
-    usage: /<command> reload
-    descriptions: Reloads from the configuration file
+  snowman:
+    usage: /<command> [reload|info]
+    descriptions: Reloads or shows info on the current settings
